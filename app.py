@@ -18,7 +18,7 @@ import schedule
 
 # === CONFIGURATION ===
 PORT = int(os.environ.get('PORT', 8080))
-PASSWORD = "H4ctar3s"
+PASSWORD = os.environ.get('PASSWORD', 'H4ctar3s')  # Można ustawić przez zmienną środowiskową w Render
 
 # Propertly.io credentials
 PROPERTLY_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI3OTUxMDUsInN1YiI6IjVmMGNmNDEzLTZhYTItNGEzOC1hYzEzLTc5Y2FiZWYwODhmYiIsImlhdCI6MTc3MDE3MDM5Mywic2NvcGUiOltdfQ.nLY1TbV2T6u3xnBiWQGDy-6Oaxm4KuF2YBDWJxpxt-I"
@@ -1756,7 +1756,14 @@ class AutomationHandler(BaseHTTPRequestHandler):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {format % args}")
 
     def do_GET(self):
-        if self.path == '/' or self.path == '/index.html':
+        # Health check endpoint for Render.com
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
+            
+        elif self.path == '/' or self.path == '/index.html':
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -1996,23 +2003,33 @@ def run_server(port=PORT):
     print("=" * 60)
     print("SMS Automation System - Enhanced Version")
     print("=" * 60)
-    print(f"Adres: http://localhost:{port}")
-    print(f"Hasło: {PASSWORD}")
+    print(f"Server started on port: {port}")
+    print(f"Access URL: http://0.0.0.0:{port}")
+    
+    # Check if running on Render.com
+    render_external_url = os.environ.get('RENDER_EXTERNAL_URL')
+    if render_external_url:
+        print(f"Render.com URL: {render_external_url}")
+        print(f"Health check: {render_external_url}/health")
+    
+    print(f"Admin Password: {PASSWORD}")
     print("=" * 60)
-    print("Nowe filtry:")
-    print("- Rodzaj rynku (pierwotny/wtórny)")
-    print("- Zakres cen (min/max)")
-    print("- Cena za m² (min/max)")
-    print("- Powierzchnia (min/max)")
-    print("- Liczba pokoi (min/max)")
-    print("- Szczegółowa lokalizacja (powiat, miasto)")
-    print("- Tylko aktywne/unikalne oferty")
+    print("Enhanced Filters:")
+    print("- Market type (primary/secondary)")
+    print("- Price range (min/max)")
+    print("- Price per m² (min/max)")
+    print("- Area (min/max)")
+    print("- Number of rooms (min/max)")
+    print("- Detailed location (county, city)")
+    print("- Active/unique offers only")
+    print("=" * 60)
+    print("Server is running... Press Ctrl+C to stop")
     print("=" * 60)
     
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\nZamykanie...")
+        print("\nShutting down...")
         save_state()
         httpd.shutdown()
 
